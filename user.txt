@@ -1,0 +1,4 @@
+Customer|121212|mahmood|121212|33119228|Savings|50.0
+Customer|333|jassim|33333|33269966|Savings|50.0
+Customer|0003|Ahmed|3030|333000|savings|50.0
+Customer|2233|Maryam|maryam123|3404|savings|530.0

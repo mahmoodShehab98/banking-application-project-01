@@ -1,0 +1,3 @@
+ID, username, password, accounts, balance, role
+1001, ali, ali, check1001, 1200, customer
+user2
