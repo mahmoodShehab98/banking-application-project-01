@@ -8,6 +8,8 @@ public class Main {
     public static void main(String[] args) throws IOException {
         UserFileManager fileManager = new UserFileManager();
         List<User> allUsers = fileManager.loadAllUsers();
+
+        System.out.println("Loaded users:" + allUsers.size());
         Scanner scanner = new Scanner(System.in);
 
         boolean running = true;
@@ -33,43 +35,59 @@ public class Main {
     }
 
 
-    private static void registerNewUser(List<User> allUsers, Scanner scanner, UserFileManager fileManager) throws
-            IOException {
+    private static void registerNewUser(List<User> allUsers, Scanner scanner, UserFileManager fileManager) throws IOException {
         System.out.print("Enter ID: ");
         String id = scanner.nextLine();
 
         System.out.print("Enter name: ");
-        String name = scanner.nextLine();
+        String name = scanner.nextLine().trim();
 
         System.out.print("Enter password: ");
-        String password = scanner.nextLine();
+        String password = scanner.nextLine().trim();
 
         System.out.print("Enter phone Number: ");
-        String phone = scanner.nextLine();
+        String phone = scanner.nextLine().trim();
 
         System.out.print("Are you Customer or Banker? ");
-        String type = scanner.nextLine();
+        String type = scanner.nextLine().trim();
 
         User newUser;
 
         if (type.equalsIgnoreCase("Customer")) {
-            System.out.print("Enter initial Saving balance: ");
-            double savingsbalance = Double.parseDouble(scanner.nextLine());
+            System.out.println("Which account(s) do you want to open?");
+            System.out.println("1) Savings");
+            System.out.println("2) Checking");
+            System.out.println("3) Both");
+            System.out.print("Choose (1/2/3): ");
+            String choice = scanner.nextLine().trim();
 
-            System.out.print("Enter initial checking balance: ");
-            double checkingBalance = Double.parseDouble(scanner.nextLine());
+            boolean wantsSavings = choice.equals("1") || choice.equals("3");
+            boolean wantsChecking = choice.equals("2") || choice.equals("3");
 
-            newUser = new Customer(id, name, password, phone, savingsbalance, checkingBalance);
+            Account savingsAccount = null;
+            Account checkingAccount = null;
+
+            if (wantsSavings) {
+                System.out.print("Enter initial Savings balance: ");
+                double savingsBalance = Double.parseDouble(scanner.nextLine());
+                savingsAccount = new Account("Savings", savingsBalance);
+            }
+
+            if (wantsChecking) {
+                System.out.print("Enter initial Checking balance: ");
+                double checkingBalance = Double.parseDouble(scanner.nextLine());
+                checkingAccount = new Account("Checking", checkingBalance);
+            }
+
+            newUser = new Customer(id, name, password, phone, savingsAccount, checkingAccount);
+
         } else {
             newUser = new Banker(id, name, password, phone);
         }
-
         allUsers.add(newUser);
         fileManager.saveUser(newUser);
 
         System.out.println("Account created successfully !");
-
-
     }
 
     private static void loginUser(List<User> allUsers, Scanner scanner, UserFileManager fileManager) throws IOException {
@@ -111,52 +129,191 @@ public class Main {
 
             if (choice == 1) {
                 Account account = chooseAccount(customer, scanner);
+                if (account == null) {
+                    continue;
+                }
                 System.out.print("Enter amount to deposit: ");
                 double amount = Double.parseDouble(scanner.nextLine());
 
                 account.setBalance(account.getBalance() + amount);
+
+                if (account.getBalance() >= 0 && !account.isActive()) {
+                    account.setActive(true);
+                    account.setOverdraftCount(0);
+                    System.out.println("Account has been reactivated.");
+                }
                 fileManager.saveUser(customer);
 
-                System.out.println("Deposit successful . new balance: " + account.getBalance());
+                System.out.println("Deposit successful. New balance: " + account.getBalance());
 
             } else if (choice == 2) {
                 Account account = chooseAccount(customer, scanner);
+                if (account == null) {
+                    continue;
+                }
+                if (!account.isActive()) {
+                    System.out.println("This account is deactivated due to repeated overdrafts. Please deposit to resolve.");
+                    continue;
+                }
+
                 System.out.print("Enter amount to withdraw: ");
                 double amount = Double.parseDouble(scanner.nextLine());
 
-                if (amount > account.getBalance()) {
-                    System.out.println("Insufficient balance.");
-                } else {
-                    account.setBalance(account.getBalance() - amount);
-                    fileManager.saveUser(customer);
-                    System.out.println("Witdraw successful. New balance: " + account.getBalance());
+                boolean wasNegative = account.getBalance() < 0;
+
+                if (wasNegative && amount > 100) {
+                    System.out.println("Cannot withdraw more than $100 while account balance is negative.");
+                    continue;
                 }
-            }
-            if (choice == 3) {
-                System.out.println("Savings balance: " + customer.getSavingsAccount().getBalance());
-                System.out.println("Checking balance: " + customer.getCheckingAccount().getBalance());
+
+                double newBalance = account.getBalance() - amount;
+
+                if (newBalance < 0 && !wasNegative) {
+                    newBalance -= 35;
+                    account.setOverdraftCount(account.getOverdraftCount() + 1);
+                    System.out.println("Overdraft occurred. A $35 fee has been charged.");
+
+                    if (account.getOverdraftCount() >= 2) {
+                        account.setActive(false);
+                        System.out.println("Account has been deactivated due to repeated overdrafts.");
+                    }
+                }
+
+                account.setBalance(newBalance);
+                fileManager.saveUser(customer);
+                System.out.println("Withdraw successful. New balance: " + account.getBalance());
+
+
+            } else if (choice == 3) {
+                if (customer.hasSavings()) {
+                    System.out.println("Savings balance: " + customer.getSavingsAccount().getBalance());
+                } else {
+                    System.out.println("Savings: no account.");
+                }
+                if (customer.hasChecking()) {
+                    System.out.println("Checking balance: " + customer.getCheckingAccount().getBalance());
+                } else {
+                    System.out.println("Checking: no account.");
+                }
+
             } else if (choice == 4) {
-                System.out.println("Transfer - coming next step");
+                System.out.println("1. Transfer to my own account");
+                System.out.println("2. Transfer to another account");
+                int transferChoise = Integer.parseInt(scanner.nextLine());
+
+                if (transferChoise == 1) {
+                    System.out.println("Transfer from:");
+                    Account from = chooseAccount(customer, scanner);
+                    if (from == null) {
+                        continue;
+                    }
+
+                    System.out.println("Transfer to:");
+                    Account to = chooseAccount(customer, scanner);
+                    if (to == null) {
+                        continue;
+                    }
+
+                    if (from == to) {
+                        System.out.println("Cannot transfer to the same account.");
+                    } else {
+                        System.out.print("Enter amount to transfer: ");
+                        double amount = Double.parseDouble(scanner.nextLine());
+
+                        if (amount > from.getBalance()) {
+                            System.out.println("Insufficient balance.");
+                        } else {
+                            from.setBalance(from.getBalance() - amount);
+                            to.setBalance(to.getBalance() + amount);
+                            fileManager.saveUser(customer);
+                            System.out.println("Transfer successful. New balance: " + from.getBalance());
+                        }
+                    }
+
+                } else if (transferChoise == 2) {
+                    System.out.println("Enter recipient customer ID: ");
+                    String recipientId = scanner.nextLine().trim();
+
+                    Customer recipient = findCustomerById(allUsers, recipientId);
+                    if (recipient == null) {
+                        System.out.println("Customer not found.");
+                        continue;
+                    }
+                    if (recipient == customer) {
+                        System.out.println("Use option 1 to transfer to your own accounts.");
+                        continue;
+                    }
+
+                    System.out.println("Transfer from your account:");
+                    Account from = chooseAccount(customer, scanner);
+                    if (from == null) {
+                        continue;
+                    }
+
+                    System.out.println("Transfer to recipient account:");
+                    Account to = chooseAccount(recipient, scanner);
+                    if (to == null) {
+                        continue;
+                    }
+
+                    if (from == to) {
+                        System.out.println("Cannot transfer to the same account.");
+                    } else {
+                        System.out.print("Enter amount to transfer: ");
+                        double amount = Double.parseDouble(scanner.nextLine());
+
+                        if (amount > from.getBalance()) {
+                            System.out.println("Insufficient balance.");
+                        } else {
+                            from.setBalance(from.getBalance() - amount);
+                            to.setBalance(to.getBalance() + amount);
+                            fileManager.saveUser(customer);
+                            fileManager.saveUser(recipient);
+                            System.out.println("Transfer successful." + "your balance now " +from.getBalance());
+                        }
+                    }
+                }
+
             } else if (choice == 5) {
                 loggedIn = false;
             }
-
         }
     }
-
     private static Account chooseAccount(Customer customer, Scanner scanner) {
         System.out.println("Choose account (Savings/Checking): ");
         String choice = scanner.nextLine();
         if (choice.equalsIgnoreCase("Savings")) {
+            if (!customer.hasSavings()) {
+                System.out.println("You don't have a Savings account.");
+                return null;
+            }
             return customer.getSavingsAccount();
         } else {
+            if (!customer.hasChecking()) {
+                System.out.println("You don't have a Checking account");
+                return null;
+            }
             return customer.getCheckingAccount();
         }
     }
-        private static void bankerMenu (Banker banker, Scanner scanner){
-            System.out.println("Banker menu - coming soon");
+
+    private static Customer findCustomerById(List<User> allUser, String id) {
+        for (User user : allUser) {
+            if (user instanceof Customer) {
+                Customer customer = (Customer) user;
+                if (customer.getId().equals(id)) {
+                    return customer;
+                }
+            }
         }
+        return null;
+    }
+
+
+    private static void bankerMenu(Banker banker, Scanner scanner) {
+        System.out.println("Banker menu - coming soon");
 
     }
+}
 
 

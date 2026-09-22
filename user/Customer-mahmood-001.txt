@@ -1,1 +1,1 @@
-001|Customer|mahmood|mahmood123|3311|S120.0|C100.0
+Customer|001|mahmood|mahmood123|3311|30.0|130.0

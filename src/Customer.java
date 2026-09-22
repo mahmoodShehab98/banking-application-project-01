@@ -1,27 +1,42 @@
 import java.util.Scanner;
 
-public class Customer extends User{
+public class Customer extends User {
     private Account savingsAccount;
     private Account checkingAccount;
 
-    public Customer(String id, String name, String password, String phoneNumber,double savingsBalance, double checkingBalance) {
-        super(id, name, password, phoneNumber,"Customer");
-        this.savingsAccount = new Account("Savings",savingsBalance);
-        this.checkingAccount = new Account("Checking",checkingBalance);
+    public Customer(String id, String name, String password, String phoneNumber,
+                    Account savingsAccount, Account checkingAccount) {
+        super(id, name, password, phoneNumber, "Customer");
+        this.savingsAccount = savingsAccount;
+        this.checkingAccount = checkingAccount;
     }
-public Account getSavingsAccount(){
+
+    public Account getSavingsAccount() {
         return savingsAccount;
-}
-public Account getCheckingAccount(){
+    }
+
+    public Account getCheckingAccount() {
         return checkingAccount;
+    }
+
+    public boolean hasSavings() {
+        return savingsAccount != null;
+    }
+
+    public boolean hasChecking() {
+        return checkingAccount != null;
+    }
+
+    @Override
+    public String toFileString() {
+        String savingsPart = hasSavings()
+                ? savingsAccount.getBalance() + ":" + savingsAccount.getOverdraftCount() + ":" + savingsAccount.isActive()
+                : "NONE";
+        String checkingPart = hasChecking()
+                ? checkingAccount.getBalance() + ":" + checkingAccount.getOverdraftCount() + ":" + checkingAccount.isActive()
+                : "NONE";
+
+        return getRole() + "|" + getId() + "|" + getName() + "|" + getPassword() + "|"
+                + getPhoneNumber() + "|" + savingsPart + "|" + checkingPart;
+    }
 }
-
-@Override
-    public String toFileString(){
-        return  getId() +"|" + getRole() + "|" + getName() + "|" + getPassword() + "|" +getPhoneNumber() + "|" + "S" +savingsAccount.getBalance() + "|" + "C"+checkingAccount.getBalance();
-}
-
-
-     }
-
-

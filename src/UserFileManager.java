@@ -53,10 +53,11 @@ public class UserFileManager {
                 String name = parts[2];
                 String password = parts[3];
                 String phone = parts[4];
-                double savingsBalance = Double.parseDouble(parts[5]);
-                double checkingBalance = Double.parseDouble(parts[6]);
 
-                allUsers.add(new Customer(id, name, password, phone, savingsBalance, checkingBalance));
+                Account savings = parseAccount("Savings", parts[5]);
+                Account checking = parseAccount("Checking", parts[6]);
+
+                allUsers.add(new Customer(id, name, password, phone, savings, checking));
 
 
             } else if (role.equals("Banker")) {
@@ -71,54 +72,18 @@ public class UserFileManager {
         }
         return allUsers;
 
+
+    }
+    private Account parseAccount(String type, String data) {
+        if (data.equals("NONE")) {
+            return null;
+        }
+        String[] accParts = data.split(":");
+        double balance = Double.parseDouble(accParts[0]);
+        int overdraftCount = accParts.length > 1 ? Integer.parseInt(accParts[1]) : 0;
+        boolean isActive = accParts.length > 2 ? Boolean.parseBoolean(accParts[2]) : true;
+        return new Account(type, balance, overdraftCount, isActive);
     }
 }
 
-//    public List<User> loadAllUsers() throws IOException {
-//        List<User> allUsers = new ArrayList<>();
-//        File file = new File(filePath);
-//
-//        if (!file.exists()) {
-//            return allUsers;
-//        }
-//        BufferedReader reader = new BufferedReader(new FileReader(filePath));
-//        String line;
-//
-//        while ((line = reader.readLine()) != null) {
-//            String[] parts = line.split("\\|");
-//            String role = parts[0];
-//
-//            if (role.equals("Customer")) {
-//                String id = parts[1];
-//                String name = parts[2];
-//                String password = parts[3];
-//                String phone = parts[4];
-//                String accountType = parts[5];
-//                double balance = Double.parseDouble(parts[6]);
-//
-//                allUsers.add(new Customer(id, name, password, phone, accountType, balance));
-//            } else if (role.equals("Banker")) {
-//                String id = parts[1];
-//                String name = parts[2];
-//                String password = parts[3];
-//                String phone = parts[4];
-//
-//                allUsers.add(new Banker(id, name, password, phone));
-//            }
-//
-//        }
-//        reader.close();
-//        return allUsers;
-//    }
-//
-//    public void saveAllUsers(List<User>allUsers)throws IOException{
-//        BufferedWriter writer = new BufferedWriter(new FileWriter(filePath));
-//
-//        for (User u : allUsers){
-//            writer.write(u.toFileString());
-//            writer.newLine();
-//        }
-//        writer.close();
-//    }
-//}
 
