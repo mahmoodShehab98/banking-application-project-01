@@ -30,10 +30,10 @@ public class Customer extends User {
     @Override
     public String toFileString() {
         String savingsPart = hasSavings()
-                ? savingsAccount.getBalance() + ":" + savingsAccount.getOverdraftCount() + ":" + savingsAccount.isActive()
+                ? savingsAccount.getBalance() + ":" + savingsAccount.getOverdraftCount() + ":" + savingsAccount.isActive() + ":" + savingsAccount.getCardType()
                 : "NONE";
         String checkingPart = hasChecking()
-                ? checkingAccount.getBalance() + ":" + checkingAccount.getOverdraftCount() + ":" + checkingAccount.isActive()
+                ? checkingAccount.getBalance() + ":" + checkingAccount.getOverdraftCount() + ":" + checkingAccount.isActive() + ":" + checkingAccount.getCardType()
                 : "NONE";
 
         return getRole() + "|" + getId() + "|" + getName() + "|" + getPassword() + "|"

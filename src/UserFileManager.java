@@ -82,7 +82,8 @@ public class UserFileManager {
         double balance = Double.parseDouble(accParts[0]);
         int overdraftCount = accParts.length > 1 ? Integer.parseInt(accParts[1]) : 0;
         boolean isActive = accParts.length > 2 ? Boolean.parseBoolean(accParts[2]) : true;
-        return new Account(type, balance, overdraftCount, isActive);
+        String cardType = accParts.length > 3 ? accParts[3] : "Mastercard";
+        return new Account(type, balance, overdraftCount, isActive, cardType);
     }
 }
 
