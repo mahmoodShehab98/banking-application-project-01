@@ -15,7 +15,7 @@ public class Main {
         List<User> allUsers = fileManager.loadAllUsers();
 
         System.out.println("||=-=-=-=-ACME BANK-=-=-=-=||");
-        System.out.println("Loaded users:" + allUsers.size());
+//        System.out.println("Loaded users:" + allUsers.size());
         Scanner scanner = new Scanner(System.in);
 
         boolean running = true;
